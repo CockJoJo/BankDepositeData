@@ -146,6 +146,45 @@ def Scale_perprocessing (Train):
     Train = pd.DataFrame(copy,columns = col)
     return Train
 
+#处理二分类的特征
+def bin_features_perprocessing (bin_features, bank_data):
+    for feature in bin_features:
+        new = np.zeros(bank_data[feature].shape[0])
+        for rol in range(bank_data[feature].shape[0]):
+            if bank_data[feature][rol] == 'yes' :
+                new[rol] = 1
+            elif bank_data[feature][rol]  == 'no':
+                new[rol] = 0
+            else:
+                new[rol] = None
+        bank_data[feature] =  new
+    return bank_data
+
+#特征值没有次序的特征，一律使用onehot编码
+def disorder_features_perprocessing (disorder_features, bank_data):
+    for features in disorder_features:
+        #做onehot
+        features_onehot = pd.get_dummies(bank_data[features])
+        #把名字改成features_values
+        features_onehot = features_onehot.rename(columns=lambda x: features+'_'+str(x))
+        #拼接onehot得到的新features
+        bank_data = pd.concat([bank_data,features_onehot],axis=1)
+        #删掉原来的feature columns
+        bank_data = bank_data.drop(features, axis=1)
+    return bank_data
+
+
+#特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
+def order_features_perprocessing (order_features,bank_data):
+    education_values = ["illiterate", "basic.4y", "basic.6y", "basic.9y",
+    "high.school",  "professional.course", "university.degree","unknown"]
+    replace_values = list(range(1,  len(education_values)))
+    replace_values.append(None)
+    #除了replace也可以用map()
+    bank_data[order_features] = bank_data[order_features].replace(education_values,replace_values)
+    bank_data[order_features] = bank_data[order_features].astype("float")
+    return bank_data
+
 # 学习曲线绘制方法
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
                         n_jobs=None, train_sizes=np.linspace(.1, 1.0, 10)):
