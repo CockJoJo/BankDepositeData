@@ -8,13 +8,11 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import ShuffleSplit
 from sklearn.ensemble import RandomForestClassifier
 
-import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve
 
 from sklearn.model_selection import GridSearchCV
-import bokeh
 
 
 def load_data(path):
@@ -136,54 +134,58 @@ def Missing_value_perprocessing_knn(bank_data_small_train, bank_data_small_test)
 
     return bank_data_small_train, bank_data_small_test
 
-#归一化
-def Scale_perprocessing (Train):
-    col  = Train.columns
+
+# 归一化
+def Scale_perprocessing(Train):
+    col = Train.columns
     copy = Train.copy()
     scaler = preprocessing.MinMaxScaler()
-    #新版本中fit_transform的第一个参数必须为二维矩阵
+    # 新版本中fit_transform的第一个参数必须为二维矩阵
     copy = scaler.fit_transform(copy)
-    Train = pd.DataFrame(copy,columns = col)
+    Train = pd.DataFrame(copy, columns=col)
     return Train
 
-#处理二分类的特征
-def bin_features_perprocessing (bin_features, bank_data):
+
+# 处理二分类的特征
+def bin_features_perprocessing(bin_features, bank_data):
     for feature in bin_features:
         new = np.zeros(bank_data[feature].shape[0])
         for rol in range(bank_data[feature].shape[0]):
-            if bank_data[feature][rol] == 'yes' :
+            if bank_data[feature][rol] == 'yes':
                 new[rol] = 1
-            elif bank_data[feature][rol]  == 'no':
+            elif bank_data[feature][rol] == 'no':
                 new[rol] = 0
             else:
                 new[rol] = None
-        bank_data[feature] =  new
+        bank_data[feature] = new
     return bank_data
 
-#特征值没有次序的特征，一律使用onehot编码
-def disorder_features_perprocessing (disorder_features, bank_data):
+
+# 特征值没有次序的特征，一律使用onehot编码
+def disorder_features_perprocessing(disorder_features, bank_data):
     for features in disorder_features:
-        #做onehot
+        # 做onehot
         features_onehot = pd.get_dummies(bank_data[features])
-        #把名字改成features_values
-        features_onehot = features_onehot.rename(columns=lambda x: features+'_'+str(x))
-        #拼接onehot得到的新features
-        bank_data = pd.concat([bank_data,features_onehot],axis=1)
-        #删掉原来的feature columns
+        # 把名字改成features_values
+        features_onehot = features_onehot.rename(columns=lambda x: features + '_' + str(x))
+        # 拼接onehot得到的新features
+        bank_data = pd.concat([bank_data, features_onehot], axis=1)
+        # 删掉原来的feature columns
         bank_data = bank_data.drop(features, axis=1)
     return bank_data
 
 
-#特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
-def order_features_perprocessing (order_features,bank_data):
+# 特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
+def order_features_perprocessing(order_features, bank_data):
     education_values = ["illiterate", "basic.4y", "basic.6y", "basic.9y",
-    "high.school",  "professional.course", "university.degree","unknown"]
-    replace_values = list(range(1,  len(education_values)))
+                        "high.school", "professional.course", "university.degree", "unknown"]
+    replace_values = list(range(1, len(education_values)))
     replace_values.append(None)
-    #除了replace也可以用map()
-    bank_data[order_features] = bank_data[order_features].replace(education_values,replace_values)
+    # 除了replace也可以用map()
+    bank_data[order_features] = bank_data[order_features].replace(education_values, replace_values)
     bank_data[order_features] = bank_data[order_features].astype("float")
     return bank_data
+
 
 # 学习曲线绘制方法
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
@@ -216,99 +218,73 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
 
 
 # 读取数据
-df = pd.read_csv('delNAN.csv')
-y = df.y
-df.drop('y', axis=1, inplace=True)
-x = df
-cv = ShuffleSplit(n_splits=10, test_size=0.2, random_state=0)
-x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
+def load_processeed_data(path):
+    df = pd.read_csv(path)
+    y = df.y
+    df.drop('y', axis=1, inplace=True)
+    x = df
+    cv = ShuffleSplit(n_splits=10, test_size=0.2, random_state=0)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
+    return x_train, x_test, x, y_train, y_test, y, cv
 
-# 单个决策树
-clf_scores_train = []
-clf_scores_test = []
-plt.figure()
-for i in range(0, 200, 5):
-    clf = DecisionTreeClassifier(splitter='best', max_depth=i + 1)
-    clf.fit(x_train, y_train)
-    clf_scores_train.append(clf.score(x_train, y_train))
-    clf_scores_test.append(clf.score(x_test, y_test))
-    print("训练集数据:{0:.2f},测试集数据：{0：.2f}".format(clf.scores(x_train, y_train), clf.score(x_test, y_test)))
-plt.show()
-
-clf_scores_train = []
-clf_scores_test = []
-plt.figure()
-for i in range(0, 10):
-    clf = DecisionTreeClassifier(splitter='best', max_depth=i + 1)
-    clf.fit(x_train, y_train)
-    clf_scores_train.append(clf.score(x_train, y_train))
-    clf_scores_test.append(clf.score(x_test, y_test))
-    print("max_depth为" + str(i) + "时训练集数据:{:.6f},测试集数据：{:.6f}".format(clf.score(x_train, y_train),
-                                                                      clf.score(x_test, y_test)))
-
-y_pred_decT = clf.predict(x_test)
-print("单颗决策树分类结果：")
-print("混淆矩阵：")
-print(sklearn.metrics.confusion_matrix(y_pred_decT, y_test))
-print("训练集分数：", clf.score(x_train, y_train))
-print("验证集分数", clf.score(x_test, y_test))
 
 # 随机森林
-rf_score = []
-for i in range(0, 200, 5):
-    rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
-    score = cross_val_score(rfc, x, y, cv=10).mean()
-    rf_score.append(score)
-print("max score: " + max(rf_score))
-plt.plot(range(1, 201, 5), rf_score)
-plt.show()
+def rf_adjust_paraments(x_train, y_train, x_test, y_test):
+    rf_score = []
+    for i in range(0, 200, 5):
+        rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
+        score = cross_val_score(rfc, x, y, cv=10).mean()
+        rf_score.append(score)
+    print("max score: " + max(rf_score))
+    plt.plot(range(1, 201, 5), rf_score)
+    plt.show()
 
-rfc = RandomForestClassifier(n_estimators=200)
-rfc.fit(x_train, y_train)
+    rfc = RandomForestClassifier(n_estimators=200)
+    rfc.fit(x_train, y_train)
 
-# AbaBoost
-bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1, splitter='best'),
-                         algorithm='SAMME',
-                         n_estimators=200,
-                         learning_rate=0.8)
-
-bdt.fit(x_train, y_train)
-y_pred = bdt.predict(x_test)
-print("混淆矩阵： " + sklearn.metrics.confusion_matrix(y_pred, y_test))
-print("训练集分数：", bdt.score(x_train, y_train))
-print("验证集分数", bdt.score(x_test, y_test))
-
-bdt_score = []
-for i in range(0, 201, 5):
-    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=i + 1, splitter='best'),
+    # AbaBoost
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1, splitter='best'),
                              algorithm='SAMME',
                              n_estimators=200,
                              learning_rate=0.8)
-    score = cross_val_score(bdt, x, y, cv=10).mean()
-    bdt_score.append(score)
-print("max score: " + max(bdt_score))
-plt.plot(range(1, 201, 5), bdt_score)
-plt.show()
 
-bdt_score = cross_val_score(bdt, x, y, cv=cv)
-print("AbaBoost 交叉验证最大分值：", bdt_score.max())
-print("AbaBoost 交叉验证平均分值：", bdt_score.mean())
+    bdt.fit(x_train, y_train)
+    y_pred = bdt.predict(x_test)
+    print("混淆矩阵： " + sklearn.metrics.confusion_matrix(y_pred, y_test))
+    print("训练集分数：", bdt.score(x_train, y_train))
+    print("验证集分数", bdt.score(x_test, y_test))
 
-# 学习曲线
-estimator_Turple = (clf, bdt)
-title_Tuple = ("decision learning curve", "adaBoost learning curve")
-title = "decision learning curve"
 
-for i in range(2):
-    estimator = estimator_Turple[i]
-    title = title_Tuple[i]
-    plot_learning_curve(estimator, title, x, y, cv=cv)
+def bdt_adjust_para(x, y, cv):
+    bdt_score = []
+    for i in range(0, 201, 5):
+        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=i + 1, splitter='best'),
+                                 algorithm='SAMME',
+                                 n_estimators=200,
+                                 learning_rate=0.8)
+        score = cross_val_score(bdt, x, y, cv=10).mean()
+        bdt_score.append(score)
+    print("max score: " + max(bdt_score))
+    plt.plot(range(1, 201, 5), bdt_score)
     plt.show()
 
-imputer11 = sklearn.impute.KNNImputer(n_neighbors=11)
+    bdt_score = cross_val_score(bdt, x, y, cv=cv)
+    print("AbaBoost 交叉验证最大分值：", bdt_score.max())
+    print("AbaBoost 交叉验证平均分值：", bdt_score.mean())
 
-# 决策树参数调优
-clf_param_test = {"n_estimators": range(20, 50, 80, 100, 120, 150, 180, 200, 230, 250, 280, 300)}
-gsearch1 = GridSearchCV(estimator=clf, param_grid=clf_param_test, scoring="roc_auc", cv=5)
-gsearch1.fit(x, y)
-print(gsearch1.best_params_, gsearch1.best_score_)
+
+# 学习曲线
+def clf_learn_curve(clf,bdt):
+    estimator_Turple = (clf, bdt)
+    title_Tuple = ("decision learning curve", "adaBoost learning curve")
+    title = "decision learning curve"
+
+    for i in range(2):
+        estimator = estimator_Turple[i]
+        title = title_Tuple[i]
+        plot_learning_curve(estimator, title, x, y, cv=cv)
+        plt.show()
+
+if __name__ == '__main__':
+    path = "bank-additional-full.csv"
+    load_data(path)
