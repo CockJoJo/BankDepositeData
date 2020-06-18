@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve
-
+import imblearn
 from sklearn.model_selection import GridSearchCV
 
 
@@ -139,7 +139,7 @@ def Missing_value_perprocessing_knn(bank_data_small_train, bank_data_small_test)
 def Scale_perprocessing(Train):
     col = Train.columns
     copy = Train.copy()
-    scaler = preprocessing.MinMaxScaler()
+    scaler = sklearn.preprocessing.MinMaxScaler()
     # 新版本中fit_transform的第一个参数必须为二维矩阵
     copy = scaler.fit_transform(copy)
     Train = pd.DataFrame(copy, columns=col)
@@ -173,7 +173,6 @@ def disorder_features_perprocessing(disorder_features, bank_data):
         # 删掉原来的feature columns
         bank_data = bank_data.drop(features, axis=1)
     return bank_data
-
 
 # 特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
 def order_features_perprocessing(order_features, bank_data):
@@ -229,7 +228,7 @@ def load_processeed_data(path):
 
 
 # 随机森林
-def rf_adjust_paraments(x_train, y_train, x_test, y_test):
+def rf_adjust_paraments(x_train,y_train,x_test,y_test,x,y):
     rf_score = []
     for i in range(0, 200, 5):
         rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
@@ -274,7 +273,7 @@ def bdt_adjust_para(x, y, cv):
 
 
 # 学习曲线
-def clf_learn_curve(clf,bdt):
+def clf_learn_curve(clf,bdt,x,y,cv):
     estimator_Turple = (clf, bdt)
     title_Tuple = ("decision learning curve", "adaBoost learning curve")
     title = "decision learning curve"
@@ -287,4 +286,36 @@ def clf_learn_curve(clf,bdt):
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
-    load_data(path)
+    data = load_data(path)
+
+    feature_classifier = feature_classifier(data)
+
+    string_features = feature_classifier[0]
+    # string_features, int_features, float_features, numeric_features, bin_features, order_features, disorder_features
+    int_features = feature_classifier[1]
+    float_features = feature_classifier[2]
+    numeric_features = feature_classifier[3]
+    bin_features = feature_classifier[4]
+    order_features = feature_classifier[5]
+    disorder_features = feature_classifier[6]
+
+    data = bin_features_perprocessing(bin_features, data)
+    data = order_features_perprocessing(order_features,data)
+    data = disorder_features_perprocessing(disorder_features,data)
+
+    # 打乱次序，划分训练集测试集
+    # x_train, x_test, y_train, y_test = train_test_split(data.iloc[:,:-1], data.iloc[:,-1], train_size=0.8, random_state=0)
+
+    data = data.sample(frac=1, random_state=12)
+    import math
+
+    x = data.iloc[0:round(data.shape[0] * 0.8), :]
+    y = data.iloc[round(data.shape[0] * 0.8):, :]
+
+    x,y=Missing_value_perprocessing_knn(x,y)
+
+    x1_train = x.drop(['y'],axis=1).copy()
+    y1_train = pd.DataFrame(x['y'],columns=['y'])
+
+    x1_test = y.drop(['y'],axis=1).copy()
+    y1_test = pd.DataFrame(y)
