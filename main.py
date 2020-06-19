@@ -307,17 +307,19 @@ def print_job_result(print_data):
     plt.legend()
     plt.show()
 
-    def marital_result_print(print_data):
-        mar = print_data[print_data['y']=='yes'].groupby('marital').count()['y'].index
-        yes = print_data[print_data['y']=='yes'].groupby('marital').count()['y']
-        no = print_data[print_data['y']=='no'].groupby('marital').count()['y']
-        plt.figure(figsize=(16,8))
-        plt.subplot(121)
-        plt.title('YES')
-        plt.pie(yes.values,labels=mar)
-        plt.title('NO')
-        plt.pie(no.values,labels=mar)
-        plt.show()
+def pie_res(print_data,feature):
+    index = print_data.groupby(feature).count().index
+    yes = print_data[print_data['y']=='yes'].groupby(feature).count()['y']
+    no = print_data[print_data['y']=='no'].groupby(feature).count()['y']
+
+    plt.figure(figsize=(12,6))
+    plt.subplot(121)
+    plt.title("YES")
+    plt.pie(yes.values,labels=index)
+    plt.subplot(122)
+    plt.title("NO")
+    plt.pie(no.values,labels=index)
+    plt.show()
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
