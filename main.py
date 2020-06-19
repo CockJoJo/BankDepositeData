@@ -307,19 +307,92 @@ def print_job_result(print_data):
     plt.legend()
     plt.show()
 
-def pie_res(print_data,feature):
-    index = print_data.groupby(feature).count().index
-    yes = print_data[print_data['y']=='yes'].groupby(feature).count()['y']
-    no = print_data[print_data['y']=='no'].groupby(feature).count()['y']
 
-    plt.figure(figsize=(12,6))
+def duration_res_print(print_data):
+    duration_count_yes = print_data[print_data['y'] == 'yes'].groupby('duration').count()['y']
+    duration_count_no = print_data[print_data['y'] == 'no'].groupby('duration').count()['y']
+    fig = plt.figure(figsize=(12, 6))
+
+    kwargs = dict(histtype='stepfilled', alpha=0.3, bins=30)
+    plt.subplot(121)
+    plt.title("Duration")
+    plt.ylabel('Yes')
+    plt.hist(duration_count_yes, label="Yes", **kwargs)
+    plt.legend()
+    plt.subplot(122)
+    plt.title("Duration")
+    plt.ylabel('No')
+    plt.hist(duration_count_no, label="No", **kwargs)
+    plt.legend()
+    plt.show()
+
+
+def edu_res_print(print_data):
+    edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
+           "university.degree", "unknown"]
+    education_count_yes = print_data[print_data['y'] == 'yes'].groupby('education').count()['y']
+    education_count_no = print_data[print_data['y'] == 'no'].groupby('education').count()['y']
+    # reorder for edu
+    education_count_yes = education_count_yes.reindex(index=edu)
+    education_count_no = education_count_no.reindex(index=edu)
+    y = education_count_yes
+    n = education_count_no
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    plt.xticks(rotation=90)
+    ax1.plot(y.values, 'b', label="Yes")
+    ax1.set_xticks(np.arange(len(edu)))
+    ax1.set_xticklabels(edu)
+    ax1.set_ylabel('Yes')
+    ax1.set_title("Education")
+    plt.legend()
+    # 加入第二根折线
+    ax2 = ax1.twinx()
+    ax2.plot(n.values, 'r', label="No")
+    ax2.set_xticks(np.arange(len(edu)))
+    ax2.set_xticklabels(edu)
+    ax2.set_ylabel('No')
+    plt.legend()
+    plt.show()
+
+
+def deposite_rate_print(print_data):
+    edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
+           "university.degree", "unknown"]
+
+    education_count_yes = print_data[print_data['y'] == 'yes'].groupby('education').count()['y']
+    education_count_no = print_data[print_data['y'] == 'no'].groupby('education').count()['y']
+
+    education_count_yes = education_count_yes.reindex(index=edu)
+    education_count_no = education_count_no.reindex(index=edu)
+
+    index = education_count_yes.index
+    fig = plt.figure(figsize=(8, 6))
+    axes = fig.add_subplot(1, 1, 1)
+    axes.plot((education_count_yes / (education_count_yes + education_count_no)).values, label='Yes/(Yes+No)')
+    axes.set_xticks(np.arange(len(edu)))
+    axes.set_xticklabels(edu)
+    axes.set_title("Education")
+    axes.set_ylabel('Yes/(Yes+No)')
+    plt.xticks(rotation=90)
+    plt.legend()
+    plt.show()
+
+
+def pie_res(print_data, feature):
+    index = print_data.groupby(feature).count().index
+    yes = print_data[print_data['y'] == 'yes'].groupby(feature).count()['y']
+    no = print_data[print_data['y'] == 'no'].groupby(feature).count()['y']
+
+    plt.figure(figsize=(12, 6))
     plt.subplot(121)
     plt.title("YES")
-    plt.pie(yes.values,labels=index)
+    plt.pie(yes.values, labels=index)
     plt.subplot(122)
     plt.title("NO")
-    plt.pie(no.values,labels=index)
+    plt.pie(no.values, labels=index)
     plt.show()
+
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -375,5 +448,3 @@ if __name__ == '__main__':
     print_data = load_data(path)
 
     print_result_age(print_data)
-
-
