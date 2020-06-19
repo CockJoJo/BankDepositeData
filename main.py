@@ -250,7 +250,6 @@ def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
     print("训练集分数：", bdt.score(x_train, y_train))
     print("验证集分数", bdt.score(x_test, y_test))
 
-
 def bdt_adjust_para(x, y, cv):
     bdt_score = []
     for i in range(0, 201, 5):
@@ -268,19 +267,30 @@ def bdt_adjust_para(x, y, cv):
     print("AbaBoost 交叉验证最大分值：", bdt_score.max())
     print("AbaBoost 交叉验证平均分值：", bdt_score.mean())
 
-
 # 学习曲线
-def clf_learn_curve(clf, bdt, x, y, cv):
-    estimator_Turple = (clf, bdt)
+def clf_learn_curve(clf, rf, bdt, x, y, cv):
+    estimator_Turple = (clf, rf,bdt)
     title_Tuple = ("decision learning curve", "adaBoost learning curve")
     title = "decision learning curve"
 
-    for i in range(2):
+    for i in range(3):
         estimator = estimator_Turple[i]
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
 
+def clf_find_bst_para(x,y):
+    clf_score = []
+    for i in range(1,50):
+        clf = DecisionTreeClassifier(max_depth=i)
+        score = cross_val_score(clf,x,y,cv=10).mean()
+        clf_score.append(score)
+        print("finish {:.2f}%".format(i/50*100))
+    plt.plot(range(1,50),clf_score)
+    plt.show()
+    print("Maximum value in the score is " + str(max(clf_score)))
+    print("The max depth of Maximum value in score is "+str(list.index(max(clf_score))))
+    return clf_score
 
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
@@ -355,7 +365,6 @@ def edu_res_print(print_data):
     plt.legend()
     plt.show()
 
-
 def deposite_rate_print(print_data):
     edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
            "university.degree", "unknown"]
@@ -378,7 +387,6 @@ def deposite_rate_print(print_data):
     plt.legend()
     plt.show()
 
-
 def pie_res(print_data, feature):
     index = print_data.groupby(feature).count().index
     yes = print_data[print_data['y'] == 'yes'].groupby(feature).count()['y']
@@ -393,21 +401,20 @@ def pie_res(print_data, feature):
     plt.pie(no.values, labels=index)
     plt.show()
 
-
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
     data = load_data(path)
 
-    feature_classifier = feature_classifier(data)
+    features_classifier = feature_classifier(data)
 
-    string_features = feature_classifier[0]
+    string_features = features_classifier[0]
     # string_features, int_features, float_features, numeric_features, bin_features, order_features, disorder_features
-    int_features = feature_classifier[1]
-    float_features = feature_classifier[2]
-    numeric_features = feature_classifier[3]
-    bin_features = feature_classifier[4]
-    order_features = feature_classifier[5]
-    disorder_features = feature_classifier[6]
+    int_features = features_classifier[1]
+    float_features = features_classifier[2]
+    numeric_features = features_classifier[3]
+    bin_features = features_classifier[4]
+    order_features = features_classifier[5]
+    disorder_features = features_classifier[6]
 
     data = bin_features_perprocessing(bin_features, data)
     data = order_features_perprocessing(order_features, data)
@@ -427,25 +434,32 @@ if __name__ == '__main__':
     y1_train = pd.DataFrame(x['y'], columns=['y'])
 
     x1_test = y.drop(['y'], axis=1).copy()
-    y1_test = pd.DataFrame(y)
+    y1_test = y1_test = pd.DataFrame(y.y)
 
-    x_test_output_path = "../X_test.csv"
+    feature = pd.concat([x1_train, x1_test], axis=0, ignore_index=True)
+    result = pd.concat([y1_train,y1_test],axis=0,ignore_index=True)
+    #
+    # x_test_output_path = "../X_test.csv"
+    #
+    # y_test_output_path = "../y_test.csv"
+    #
+    # x_train_output_path = "../X_train.csv"
+    #
+    # y_train_output_path = "../y_train.csv"
+    #
+    # x1_test.to_csv(x_test_output_path, index=False)
+    #
+    # y1_test.to_csv(y_test_output_path, index=False)
+    #
+    # x1_train.to_csv(x_train_output_path, index=False)
+    #
+    # y1_train.to_csv(y_train_output_path, index=False)
+    #
+    # print_data = load_data(path)
+    #
+    # print_result_age(print_data)
+    #
+    # estimator = []
 
-    y_test_output_path = "../y_test.csv"
-
-    x_train_output_path = "../X_train.csv"
-
-    y_train_output_path = "../y_train.csv"
-
-    x1_test.to_csv(x_test_output_path, index=False)
-
-    y1_test.to_csv(y_test_output_path, index=False)
-
-    x1_train.to_csv(x_train_output_path, index=False)
-
-    y1_train.to_csv(y_train_output_path, index=False)
-
-    print_data = load_data(path)
-
-    print_result_age(print_data)
+    clf_find_bst_para(feature,result)
 
