@@ -1,18 +1,14 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import sklearn
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import AdaBoostClassifier
-import matplotlib.pyplot as plt
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import ShuffleSplit
 from sklearn.ensemble import RandomForestClassifier
-
-import numpy as np
-import matplotlib.pyplot as plt
+from sklearn.model_selection import ShuffleSplit
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import learning_curve
-import imblearn
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
 
 
 def load_data(path):
@@ -174,6 +170,7 @@ def disorder_features_perprocessing(disorder_features, bank_data):
         bank_data = bank_data.drop(features, axis=1)
     return bank_data
 
+
 # 特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
 def order_features_perprocessing(order_features, bank_data):
     education_values = ["illiterate", "basic.4y", "basic.6y", "basic.9y",
@@ -228,7 +225,7 @@ def load_processeed_data(path):
 
 
 # 随机森林
-def rf_adjust_paraments(x_train,y_train,x_test,y_test,x,y):
+def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
     rf_score = []
     for i in range(0, 200, 5):
         rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
@@ -273,7 +270,7 @@ def bdt_adjust_para(x, y, cv):
 
 
 # 学习曲线
-def clf_learn_curve(clf,bdt,x,y,cv):
+def clf_learn_curve(clf, bdt, x, y, cv):
     estimator_Turple = (clf, bdt)
     title_Tuple = ("decision learning curve", "adaBoost learning curve")
     title = "decision learning curve"
@@ -283,6 +280,7 @@ def clf_learn_curve(clf,bdt,x,y,cv):
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
+
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -300,22 +298,21 @@ if __name__ == '__main__':
     disorder_features = feature_classifier[6]
 
     data = bin_features_perprocessing(bin_features, data)
-    data = order_features_perprocessing(order_features,data)
-    data = disorder_features_perprocessing(disorder_features,data)
+    data = order_features_perprocessing(order_features, data)
+    data = disorder_features_perprocessing(disorder_features, data)
 
     # 打乱次序，划分训练集测试集
     # x_train, x_test, y_train, y_test = train_test_split(data.iloc[:,:-1], data.iloc[:,-1], train_size=0.8, random_state=0)
 
     data = data.sample(frac=1, random_state=12)
-    import math
 
     x = data.iloc[0:round(data.shape[0] * 0.8), :]
     y = data.iloc[round(data.shape[0] * 0.8):, :]
 
-    x,y=Missing_value_perprocessing_knn(x,y)
+    x, y = Missing_value_perprocessing_knn(x, y)
 
-    x1_train = x.drop(['y'],axis=1).copy()
-    y1_train = pd.DataFrame(x['y'],columns=['y'])
+    x1_train = x.drop(['y'], axis=1).copy()
+    y1_train = pd.DataFrame(x['y'], columns=['y'])
 
-    x1_test = y.drop(['y'],axis=1).copy()
+    x1_test = y.drop(['y'], axis=1).copy()
     y1_test = pd.DataFrame(y)
