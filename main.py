@@ -250,6 +250,7 @@ def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
     print("训练集分数：", bdt.score(x_train, y_train))
     print("验证集分数", bdt.score(x_test, y_test))
 
+
 def bdt_adjust_para(x, y, cv):
     bdt_score = []
     for i in range(0, 201, 5):
@@ -267,9 +268,10 @@ def bdt_adjust_para(x, y, cv):
     print("AbaBoost 交叉验证最大分值：", bdt_score.max())
     print("AbaBoost 交叉验证平均分值：", bdt_score.mean())
 
+
 # 学习曲线
 def clf_learn_curve(clf, rf, bdt, x, y, cv):
-    estimator_Turple = (clf, rf,bdt)
+    estimator_Turple = (clf, rf, bdt)
     title_Tuple = ("decision learning curve", "adaBoost learning curve")
     title = "decision learning curve"
 
@@ -279,18 +281,53 @@ def clf_learn_curve(clf, rf, bdt, x, y, cv):
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
 
-def clf_find_bst_para(x,y):
+def clf_find_max_depth(x, y):
     clf_score = []
-    for i in range(1,50):
+    for i in range(1, 50):
         clf = DecisionTreeClassifier(max_depth=i)
-        score = cross_val_score(clf,x,y,cv=10).mean()
+        score = cross_val_score(clf, x, y, cv=10).mean()
         clf_score.append(score)
-        print("finish {:.2f}%".format(i/50*100))
-    plt.plot(range(1,50),clf_score)
+        print("finish {:.2f}%".format(i / 50 * 100))
+    plt.plot(range(1, 50), clf_score)
     plt.show()
     print("Maximum value in the score is " + str(max(clf_score)))
-    print("The max depth of Maximum value in score is "+str(list.index(max(clf_score))))
-    return clf_score
+    print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
+    return max(clf_score), clf_score.index(max(clf_score))
+
+def rf_find_n_estimate(x, y):
+    rf_score = []
+    rf_final_score = []
+    for i in range(1, 500, 10):
+        rf = RandomForestClassifier(n_estimators=i)
+        score = cross_val_score(rf, x, y, cv=10).mean()
+        rf_score.append(score)
+        print("rf 1st finish {:.2f}%".format(i / 500 * 100))
+    plt.plot(range(1, 50), rf_score)
+    plt.show()
+
+    section = 0
+    if rf_score.index(rf_score.index(max(rf_score))*10)>20:
+        for i in range(max(rf_score.index(max(rf_score))) - 20, rf_score.index(max(rf_score)) + 20, 1):
+            rf = RandomForestClassifier(n_estimators=i)
+            score = cross_val_score(rf, x, y, cv=10).mean()
+            rf_final_score.append(score)
+            print("rf 2nd finish {:.2f}%".format(i / (40+rf_score.index(max(rf_score))* 100)))
+        plt.plot(range(max(rf_score.index(max(rf_score))) - 20, rf_score.index(max(rf_score)) + 20,1))
+        plt.show()
+    else:
+        for i in range(0, rf_score.index(max(rf_score)) + 20, 1):
+            rf = RandomForestClassifier(n_estimators=i)
+            score = cross_val_score(rf, x, y, cv=10).mean()
+            rf_final_score.append(score)
+            print("rf 2nd finish {:.2f}%".format(i / (20 + rf_score.index(max(rf_score) * 100))))
+        plt.plot(0, rf_score.index(max(rf_score)) + 20, 1)
+        plt.show()
+    return max(rf_final_score),
+
+
+    print("Maximum value in the score is " + str(max(clf_score)))
+    print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
+    return max(clf_score), clf_score.index(max(clf_score))
 
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
@@ -365,6 +402,7 @@ def edu_res_print(print_data):
     plt.legend()
     plt.show()
 
+
 def deposite_rate_print(print_data):
     edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
            "university.degree", "unknown"]
@@ -387,6 +425,7 @@ def deposite_rate_print(print_data):
     plt.legend()
     plt.show()
 
+
 def pie_res(print_data, feature):
     index = print_data.groupby(feature).count().index
     yes = print_data[print_data['y'] == 'yes'].groupby(feature).count()['y']
@@ -400,6 +439,7 @@ def pie_res(print_data, feature):
     plt.title("NO")
     plt.pie(no.values, labels=index)
     plt.show()
+
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -437,7 +477,7 @@ if __name__ == '__main__':
     y1_test = y1_test = pd.DataFrame(y.y)
 
     feature = pd.concat([x1_train, x1_test], axis=0, ignore_index=True)
-    result = pd.concat([y1_train,y1_test],axis=0,ignore_index=True)
+    result = pd.concat([y1_train, y1_test], axis=0, ignore_index=True)
     #
     # x_test_output_path = "../X_test.csv"
     #
@@ -461,5 +501,5 @@ if __name__ == '__main__':
     #
     # estimator = []
 
-    clf_find_bst_para(feature,result)
+    clf_max_depth = clf_find_bst_para(feature, result)
 
