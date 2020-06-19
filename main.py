@@ -185,7 +185,7 @@ def order_features_perprocessing(order_features, bank_data):
 
 # 学习曲线绘制方法
 def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
-                        n_jobs=None, train_sizes=np.linspace(.1, 1.0, 10)):
+                        n_jobs=None, train_sizes=np.linspace(.2, 1.0, 10)):
     plt.figure()
     plt.title(title)
     if ylim is not None:
@@ -448,3 +448,4 @@ if __name__ == '__main__':
     print_data = load_data(path)
 
     print_result_age(print_data)
+
