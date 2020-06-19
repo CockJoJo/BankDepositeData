@@ -281,12 +281,43 @@ def clf_learn_curve(clf, bdt, x, y, cv):
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
 
+
 def print_result_age(data):
-    kwargs = dict(histtype='stepfilled',alpha = 0.3,bins=40)
-    plt.hist(data[data['y']=='yes']['age'],label="Yes",**kwargs)
-    plt.hist(data[data['y']=='no']['age'],label="No",**kwargs)
+    kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
+    plt.hist(data[data['y'] == 'yes']['age'], label="Yes", **kwargs)
+    plt.hist(data[data['y'] == 'no']['age'], label="No", **kwargs)
     plt.legend()
     plt.show()
+
+
+def print_job_result(print_data):
+    job = print_data[print_data['y'] == 'yes'].groupby('job').count()['y'].index
+    yes = print_data[print_data['y'] == 'yes'].groupby('job').count()['y']
+    no = print_data[print_data['y'] == 'no'].groupby('job').count()['y']
+    width = 0.5
+    plt.figure(figsize=(8, 4))
+    plt.subplot(121)
+    plt.bar(job, yes, width, color='yellow', label='Yes')
+    plt.bar(job, no, width, bottom=yes, color='green', label='No')
+    plt.xticks(rotation=90)
+    plt.legend()
+    plt.subplot(122)
+    plt.bar(job, yes / no, width, color='blue', label='Yes/No')
+    plt.xticks(rotation=90)
+    plt.legend()
+    plt.show()
+
+    def marital_result_print(print_data):
+        mar = print_data[print_data['y']=='yes'].groupby('marital').count()['y'].index
+        yes = print_data[print_data['y']=='yes'].groupby('marital').count()['y']
+        no = print_data[print_data['y']=='no'].groupby('marital').count()['y']
+        plt.figure(figsize=(16,8))
+        plt.subplot(121)
+        plt.title('YES')
+        plt.pie(yes.values,labels=mar)
+        plt.title('NO')
+        plt.pie(no.values,labels=mar)
+        plt.show()
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -343,4 +374,3 @@ if __name__ == '__main__':
 
     print_result_age(print_data)
 
-    
