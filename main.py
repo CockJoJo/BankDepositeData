@@ -281,6 +281,12 @@ def clf_learn_curve(clf, bdt, x, y, cv):
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
 
+def print_result_age(data):
+    kwargs = dict(histtype='stepfilled',alpha = 0.3,bins=40)
+    plt.hist(data[data['y']=='yes']['age'],label="Yes",**kwargs)
+    plt.hist(data[data['y']=='no']['age'],label="No",**kwargs)
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -316,3 +322,25 @@ if __name__ == '__main__':
 
     x1_test = y.drop(['y'], axis=1).copy()
     y1_test = pd.DataFrame(y)
+
+    x_test_output_path = "../X_test.csv"
+
+    y_test_output_path = "../y_test.csv"
+
+    x_train_output_path = "../X_train.csv"
+
+    y_train_output_path = "../y_train.csv"
+
+    x1_test.to_csv(x_test_output_path, index=False)
+
+    y1_test.to_csv(y_test_output_path, index=False)
+
+    x1_train.to_csv(x_train_output_path, index=False)
+
+    y1_train.to_csv(y_train_output_path, index=False)
+
+    print_data = load_data(path)
+
+    print_result_age(print_data)
+
+    
