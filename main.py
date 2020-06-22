@@ -296,38 +296,18 @@ def clf_find_max_depth(x, y):
 
 def rf_find_n_estimate(x, y):
     rf_score = []
-    rf_final_score = []
-    for i in range(1, 500, 10):
-        rf = RandomForestClassifier(n_estimators=i)
+    for i in range(1, 200):
+        **fit_params =
+        rf = RandomForestClassifier(n_estimators=i,max_depth=5)
         score = cross_val_score(rf, x, y, cv=10).mean()
         rf_score.append(score)
-        print("rf 1st finish {:.2f}%".format(i / 500 * 100))
-    plt.plot(range(1, 50), rf_score)
+        print("rf 1st finish {:.2f}%".format(i / 200 * 100))
+    plt.plot(range(1, 200), rf_score)
     plt.show()
 
-    section = 0
-    if rf_score.index(rf_score.index(max(rf_score))*10)>20:
-        for i in range(max(rf_score.index(max(rf_score))) - 20, rf_score.index(max(rf_score)) + 20, 1):
-            rf = RandomForestClassifier(n_estimators=i)
-            score = cross_val_score(rf, x, y, cv=10).mean()
-            rf_final_score.append(score)
-            print("rf 2nd finish {:.2f}%".format(i / (40+rf_score.index(max(rf_score))* 100)))
-        plt.plot(range(max(rf_score.index(max(rf_score))) - 20, rf_score.index(max(rf_score)) + 20,1))
-        plt.show()
-    else:
-        for i in range(0, rf_score.index(max(rf_score)) + 20, 1):
-            rf = RandomForestClassifier(n_estimators=i)
-            score = cross_val_score(rf, x, y, cv=10).mean()
-            rf_final_score.append(score)
-            print("rf 2nd finish {:.2f}%".format(i / (20 + rf_score.index(max(rf_score) * 100))))
-        plt.plot(0, rf_score.index(max(rf_score)) + 20, 1)
-        plt.show()
-    return max(rf_final_score),
-
-
-    print("Maximum value in the score is " + str(max(clf_score)))
-    print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
-    return max(clf_score), clf_score.index(max(clf_score))
+    print("Maximum value in the score is " + str(max(rf_score)))
+    print("The max depth of Maximum value in score is " + str(rf_score.index(max(rf_score))))
+    return max(rf_score), rf_score.index(max(rf_score))
 
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
@@ -501,5 +481,6 @@ if __name__ == '__main__':
     #
     # estimator = []
 
-    clf_max_depth = clf_find_bst_para(feature, result)
+    clf_max_depth = clf_find_max_depth(feature, result)
 
+    rf_bst_para = rf_find_n_estimate(feature,result)
