@@ -297,7 +297,7 @@ def clf_find_max_depth(x, y):
 def rf_find_n_estimate(x, y):
     rf_score = []
     for i in range(1, 200):
-        **fit_params =
+
         rf = RandomForestClassifier(n_estimators=i,max_depth=5)
         score = cross_val_score(rf, x, y, cv=10).mean()
         rf_score.append(score)
