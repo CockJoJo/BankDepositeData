@@ -259,10 +259,10 @@ def bdt_adjust_para(x, y):
                                  algorithm='SAMME',
                                  n_estimators=i,
                                  learning_rate=0.8)
-        score = cross_val_score(bdt, x, y, cv=10).mean()
+        score = cross_val_score(bdt, x, y, cv=5).mean()
         bdt_score_n.append(score)
         print("finish {:.2f}%".format(i / 200 * 100))
-    print("max score: " + max(bdt_score_n))
+    print("max score: {:.4f}".format(max(bdt_score_n)))
     plt.plot(range(1, 200, 5), bdt_score_n)
     plt.show()
 
@@ -271,10 +271,10 @@ def bdt_adjust_para(x, y):
                                  algorithm='SAMME',
                                  n_estimators=bdt_score_n.index(max(bdt_score_n)) * 5,
                                  learning_rate=i)
-        score = cross_val_score(bdt, x, y, cv=10).mean()
+        score = cross_val_score(bdt, x, y, cv=5).mean()
         bdt_score_learn.append(score)
         print("finish {:.2f}%".format((i-0.5) * 100))
-    print("max score: " + max(bdt_score_learn))
+    print("max score: {:.4f}".format( max(bdt_score_learn)))
     plt.plot(range(0.5, 1.5, 0.1), bdt_score_learn)
     plt.show()
 
