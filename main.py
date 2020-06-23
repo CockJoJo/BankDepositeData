@@ -246,33 +246,52 @@ def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
 
     bdt.fit(x_train, y_train)
     y_pred = bdt.predict(x_test)
-    print("混淆矩阵： " + sklearn.metrics.confusion_matrix(y_pred, y_test))
+    print("混淆矩阵： " + stklearn.metrics.confusion_matrix(y_pred, y_test))
     print("训练集分数：", bdt.score(x_train, y_train))
     print("验证集分数", bdt.score(x_test, y_test))
 
 
-def bdt_adjust_para(x, y, cv):
-    bdt_score = []
-    for i in range(0, 201, 5):
-        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=i + 1, splitter='best'),
+def bdt_adjust_para(x, y):
+    bdt_score_n = []
+    bdt_score_learn = []
+    for i in range(1, 200, 5):
+        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
                                  algorithm='SAMME',
-                                 n_estimators=200,
+                                 n_estimators=i,
                                  learning_rate=0.8)
         score = cross_val_score(bdt, x, y, cv=10).mean()
-        bdt_score.append(score)
-    print("max score: " + max(bdt_score))
-    plt.plot(range(1, 201, 5), bdt_score)
+        bdt_score_n.append(score)
+        print("finish {:.2f}%".format(i / 200 * 100))
+    print("max score: " + max(bdt_score_n))
+    plt.plot(range(1, 200, 5), bdt_score_n)
     plt.show()
 
-    bdt_score = cross_val_score(bdt, x, y, cv=cv)
-    print("AbaBoost 交叉验证最大分值：", bdt_score.max())
-    print("AbaBoost 交叉验证平均分值：", bdt_score.mean())
+    for i in range(0.5, 1.5, 0.1):
+        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
+                                 algorithm='SAMME',
+                                 n_estimators=bdt_score_n.index(max(bdt_score_n)) * 5,
+                                 learning_rate=i)
+        score = cross_val_score(bdt, x, y, cv=10).mean()
+        bdt_score_learn.append(score)
+        print("finish {:.2f}%".format((i-0.5) * 100))
+    print("max score: " + max(bdt_score_learn))
+    plt.plot(range(0.5, 1.5, 0.1), bdt_score_learn)
+    plt.show()
 
+    print("AbaBoost n_estimater 测试交叉验证最大分值：", max(bdt_score_n))
+    print("AbaBoost n_estimater 测试交叉验证平均分值：", bdt_score_n.mean())
+    print("AbaBoost 交叉验证最大分值所选择n_estimate值为", bdt_score_n.index(max(bdt_score_n)) * 5)
+
+    print("AbaBoost learning-rate 测试交叉验证最大分值：", max(bdt_score_learn))
+    print("AbaBoost learning-rate 测试交叉验证平均分值：", bdt_score_learn.mean())
+    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) /10)+0.5 )
+
+    return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 5
 
 # 学习曲线
 def clf_learn_curve(clf, rf, bdt, x, y, cv):
     estimator_Turple = (clf, rf, bdt)
-    title_Tuple = ("decision learning curve", "adaBoost learning curve")
+    title_Tuple = ("decision learning curve", "random forest learning curve", "adaBoost learning curve")
     title = "decision learning curve"
 
     for i in range(3):
@@ -280,6 +299,7 @@ def clf_learn_curve(clf, rf, bdt, x, y, cv):
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
+
 
 def clf_find_max_depth(x, y):
     clf_score = []
@@ -294,20 +314,21 @@ def clf_find_max_depth(x, y):
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
 
+
 def rf_find_n_estimate(x, y):
     rf_score = []
     for i in range(1, 200):
-
-        rf = RandomForestClassifier(n_estimators=i,max_depth=5)
+        rf = RandomForestClassifier(n_estimators=i, max_depth=5)
         score = cross_val_score(rf, x, y, cv=10).mean()
         rf_score.append(score)
-        print("rf 1st finish {:.2f}%".format(i / 200 * 100))
+        print("rf finish {:.2f}%".format(i / 200 * 100))
     plt.plot(range(1, 200), rf_score)
     plt.show()
 
     print("Maximum value in the score is " + str(max(rf_score)))
-    print("The max depth of Maximum value in score is " + str(rf_score.index(max(rf_score))))
+    print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))))
     return max(rf_score), rf_score.index(max(rf_score))
+
 
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
@@ -457,7 +478,9 @@ if __name__ == '__main__':
     y1_test = y1_test = pd.DataFrame(y.y)
 
     feature = pd.concat([x1_train, x1_test], axis=0, ignore_index=True)
+
     result = pd.concat([y1_train, y1_test], axis=0, ignore_index=True)
+
     #
     # x_test_output_path = "../X_test.csv"
     #
@@ -483,4 +506,11 @@ if __name__ == '__main__':
 
     clf_max_depth = clf_find_max_depth(feature, result)
 
-    rf_bst_para = rf_find_n_estimate(feature,result)
+    rf_bst_para = rf_find_n_estimate(feature, result)
+
+    max_depth = clf_max_depth[1]
+
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
+                             algorithm='SAMME',
+                             n_estimators=200,
+                             learning_rate=0.8)
