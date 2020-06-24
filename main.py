@@ -9,7 +9,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-
+from imblearn.over_sampling import SMOTE
+from sklearn.svm import SVC
 
 def load_data(path):
     data = pd.read_csv(path, sep=";")
@@ -87,12 +88,12 @@ def Missing_value_perprocessing_rf(train, test):
 
 
 # 使用knn填补缺失值
-def Missing_value_perprocessing_knn(bank_data_small_train, bank_data_small_test):
+def Missing_value_perprocessing_knn(train, test):
     Missing_features_dict = {}
     Missing_features_name = []
     # 先统计哪些列存在缺失的数据
-    for feature in bank_data_small_train.columns:
-        Missing_count = bank_data_small_train[bank_data_small_train[feature].isnull()]['age'].count()
+    for feature in train.columns:
+        Missing_count = train[train[feature].isnull()]['age'].count()
         if Missing_count > 0:
             # 统计包含缺失值的列
             Missing_features_dict.update({feature: Missing_count})
@@ -101,17 +102,17 @@ def Missing_value_perprocessing_knn(bank_data_small_train, bank_data_small_test)
     from sklearn.neighbors import KNeighborsClassifier
     for feature in Missing_features_name:
         # 训练集中有缺失值的数据
-        train_miss_data = bank_data_small_train[bank_data_small_train[feature].isnull()]
+        train_miss_data = train[train[feature].isnull()]
         train_miss_data_X = train_miss_data.drop(Missing_features_name, axis=1)
         # 训练集中没有缺失值的数据
-        train_full_data = bank_data_small_train[bank_data_small_train[feature].notnull()]
+        train_full_data = train[train[feature].notnull()]
         train_full_data_Y = train_full_data[feature]
         train_full_data_X = train_full_data.drop(Missing_features_name, axis=1)
         # 测试集中有缺失值的数据
-        test_miss_data = bank_data_small_test[bank_data_small_test[feature].isnull()]
+        test_miss_data = test[test[feature].isnull()]
         test_miss_data_X = test_miss_data.drop(Missing_features_name, axis=1)
         # 测试集中没有缺失值的数据
-        test_full_data = bank_data_small_test[bank_data_small_test[feature].notnull()]
+        test_full_data = test[test[feature].notnull()]
         test_full_data_Y = test_full_data[feature]
         test_full_data_X = test_full_data.drop(Missing_features_name, axis=1)
 
@@ -125,10 +126,10 @@ def Missing_value_perprocessing_knn(bank_data_small_train, bank_data_small_test)
         train_miss_data[feature] = train_miss_data_Y
         test_miss_data[feature] = test_miss_data_Y
 
-        bank_data_small_train = pd.concat([train_full_data, train_miss_data])
-        bank_data_small_test = pd.concat([test_full_data, test_miss_data])
+        train = pd.concat([train_full_data, train_miss_data])
+        test = pd.concat([test_full_data, test_miss_data])
 
-    return bank_data_small_train, bank_data_small_test
+    return train, test
 
 
 # 归一化
@@ -223,33 +224,32 @@ def load_processeed_data(path):
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
     return x_train, x_test, x, y_train, y_test, y, cv
 
-
 # 随机森林
-def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
-    rf_score = []
-    for i in range(0, 200, 5):
-        rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
-        score = cross_val_score(rfc, x, y, cv=10).mean()
-        rf_score.append(score)
-    print("max score: " + max(rf_score))
-    plt.plot(range(1, 201, 5), rf_score)
-    plt.show()
-
-    rfc = RandomForestClassifier(n_estimators=200)
-    rfc.fit(x_train, y_train)
-
-    # AbaBoost
-    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1, splitter='best'),
-                             algorithm='SAMME',
-                             n_estimators=200,
-                             learning_rate=0.8)
-
-    bdt.fit(x_train, y_train)
-    y_pred = bdt.predict(x_test)
-    print("混淆矩阵： " + stklearn.metrics.confusion_matrix(y_pred, y_test))
-    print("训练集分数：", bdt.score(x_train, y_train))
-    print("验证集分数", bdt.score(x_test, y_test))
-
+# def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
+#     rf_score = []
+#     for i in range(0, 200, 5):
+#         rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
+#         score = cross_val_score(rfc, x, y, cv=10).mean()
+#         rf_score.append(score)
+#     print("max score: " + max(rf_score))
+#     plt.plot(range(1, 201, 5), rf_score)
+#     plt.show()
+#
+#     rfc = RandomForestClassifier(n_estimators=200)
+#     rfc.fit(x_train, y_train)
+#
+#     # AbaBoost
+#     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1, splitter='best'),
+#                              algorithm='SAMME',
+#                              n_estimators=200,
+#                              learning_rate=0.8)
+#
+#     bdt.fit(x_train, y_train)
+#     y_pred = bdt.predict(x_test)
+#     print("混淆矩阵： " + stklearn.metrics.confusion_matrix(y_pred, y_test))
+#     print("训练集分数：", bdt.score(x_train, y_train))
+#     print("验证集分数", bdt.score(x_test, y_test))
+#
 
 def bdt_adjust_para(x, y):
     bdt_score_n = []
@@ -263,19 +263,20 @@ def bdt_adjust_para(x, y):
         bdt_score_n.append(score)
         print("finish {:.2f}%".format(i / 200 * 100))
     print("max score: {:.4f}".format(max(bdt_score_n)))
+    print("index is {}".format(bdt_score_n.index(max(bdt_score_n))))
     plt.plot(range(1, 200, 5), bdt_score_n)
     plt.show()
 
-    for i in range(0.5, 1.5, 0.1):
+    for i in range(5, 15):
         bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
                                  algorithm='SAMME',
                                  n_estimators=bdt_score_n.index(max(bdt_score_n)) * 5,
-                                 learning_rate=i)
+                                 learning_rate=i/10)
         score = cross_val_score(bdt, x, y, cv=5).mean()
         bdt_score_learn.append(score)
         print("finish {:.2f}%".format((i-0.5) * 100))
     print("max score: {:.4f}".format( max(bdt_score_learn)))
-    plt.plot(range(0.5, 1.5, 0.1), bdt_score_learn)
+    plt.plot(range(5, 15, 1), bdt_score_learn)
     plt.show()
 
     print("AbaBoost n_estimater 测试交叉验证最大分值：", max(bdt_score_n))
@@ -284,17 +285,17 @@ def bdt_adjust_para(x, y):
 
     print("AbaBoost learning-rate 测试交叉验证最大分值：", max(bdt_score_learn))
     print("AbaBoost learning-rate 测试交叉验证平均分值：", bdt_score_learn.mean())
-    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) /10)+0.5 )
+    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) /10)+0.5)
 
     return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 5
 
 # 学习曲线
-def clf_learn_curve(clf, rf, bdt, x, y, cv):
-    estimator_Turple = (clf, rf, bdt)
+def clf_learn_curve(clf, rf, bdt,svm, x, y, cv):
+    estimator_Turple = (clf, rf, bdt,svm)
     title_Tuple = ("decision learning curve", "random forest learning curve", "adaBoost learning curve")
     title = "decision learning curve"
 
-    for i in range(3):
+    for i in range(4):
         estimator = estimator_Turple[i]
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
@@ -314,6 +315,17 @@ def clf_find_max_depth(x, y):
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
 
+def svm_find_c(x,y):
+    svm = SVC(kernel='rbf',probability=True)
+    param_grid = {'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000],'gamma':[0.001,0.0001]}
+    grid_search = sklearn.model_selection.GridSearchCV(svm, param_grid, n_jobs=8,verbose=1)
+    grid_search.fit(x, y)
+    best_parameters = grid_search.best_params_.get_params()
+    for para, val in list(best_parameters.items()):
+        print(para, val)
+    svm = SVC(kernel='rbf', C=best_parameters['C'],gamma=best_parameters['gamma'],probability=True)
+    svm.fit(x, y)
+    return svm
 
 def rf_find_n_estimate(x, y):
     rf_score = []
@@ -514,3 +526,5 @@ if __name__ == '__main__':
                              algorithm='SAMME',
                              n_estimators=200,
                              learning_rate=0.8)
+
+
