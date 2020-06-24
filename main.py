@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeClassifier
 from imblearn.over_sampling import SMOTE
 from sklearn.svm import SVC
 
+
 def load_data(path):
     data = pd.read_csv(path, sep=";")
     return data
@@ -224,6 +225,7 @@ def load_processeed_data(path):
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
     return x_train, x_test, x, y_train, y_test, y, cv
 
+
 # 随机森林
 # def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
 #     rf_score = []
@@ -271,11 +273,11 @@ def bdt_adjust_para(x, y):
         bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
                                  algorithm='SAMME',
                                  n_estimators=bdt_score_n.index(max(bdt_score_n)) * 5,
-                                 learning_rate=i/10)
+                                 learning_rate=i / 10)
         score = cross_val_score(bdt, x, y, cv=5).mean()
         bdt_score_learn.append(score)
-        print("finish {:.2f}%".format((i-0.5) * 100))
-    print("max score: {:.4f}".format( max(bdt_score_learn)))
+        print("finish {:.2f}%".format((i - 0.5) * 100))
+    print("max score: {:.4f}".format(max(bdt_score_learn)))
     plt.plot(range(5, 15, 1), bdt_score_learn)
     plt.show()
 
@@ -285,13 +287,14 @@ def bdt_adjust_para(x, y):
 
     print("AbaBoost learning-rate 测试交叉验证最大分值：", max(bdt_score_learn))
     print("AbaBoost learning-rate 测试交叉验证平均分值：", bdt_score_learn.mean())
-    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) /10)+0.5)
+    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) / 10) + 0.5)
 
     return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 5
 
+
 # 学习曲线
-def clf_learn_curve(clf, rf, bdt,svm, x, y, cv):
-    estimator_Turple = (clf, rf, bdt,svm)
+def clf_learn_curve(clf, rf, bdt, svm, x, y, cv):
+    estimator_Turple = (clf, rf, bdt, svm)
     title_Tuple = ("decision learning curve", "random forest learning curve", "adaBoost learning curve")
     title = "decision learning curve"
 
@@ -315,17 +318,19 @@ def clf_find_max_depth(x, y):
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
 
-def svm_find_c(x,y):
-    svm = SVC(kernel='rbf',probability=True)
-    param_grid = {'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000],'gamma':[0.001,0.0001]}
-    grid_search = sklearn.model_selection.GridSearchCV(svm, param_grid, n_jobs=8,verbose=1)
+
+def svm_find_c(x, y):
+    svm = SVC(kernel='rbf', probability=True)
+    param_grid = {'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000], 'gamma': [0.001, 0.0001]}
+    grid_search = sklearn.model_selection.GridSearchCV(svm, param_grid, n_jobs=8, verbose=1)
     grid_search.fit(x, y)
     best_parameters = grid_search.best_params_.get_params()
     for para, val in list(best_parameters.items()):
         print(para, val)
-    svm = SVC(kernel='rbf', C=best_parameters['C'],gamma=best_parameters['gamma'],probability=True)
+    svm = SVC(kernel='rbf', C=best_parameters['C'], gamma=best_parameters['gamma'], probability=True)
     svm.fit(x, y)
     return svm
+
 
 def rf_find_n_estimate(x, y):
     rf_score = []
@@ -454,6 +459,12 @@ def pie_res(print_data, feature):
     plt.show()
 
 
+def SMOTE_unbalance(feature, result):
+    sample_solver = SMOTE(random_state=0)
+    feature_sample, result_sample = sample_solver.fit_sample(feature, result)
+    return feature_sample, result_sample
+
+
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
     data = load_data(path)
@@ -474,7 +485,8 @@ if __name__ == '__main__':
     data = disorder_features_perprocessing(disorder_features, data)
 
     # 打乱次序，划分训练集测试集
-    # x_train, x_test, y_train, y_test = train_test_split(data.iloc[:,:-1], data.iloc[:,-1], train_size=0.8, random_state=0)
+    x_train, x_test, y_train, y_test = train_test_split(data.iloc[:, :-1], data.iloc[:, -1], train_size=0.8,
+                                                        random_state=0)
 
     data = data.sample(frac=1, random_state=12)
 
@@ -493,6 +505,9 @@ if __name__ == '__main__':
 
     result = pd.concat([y1_train, y1_test], axis=0, ignore_index=True)
 
+    feature_sampled = SMOTE_unbalance(feature, result)[0]
+    result_sampled = SMOTE_unbalance(feature, result)[1]
+    svm_find_c(feature_sampled,result_sampled)
     #
     # x_test_output_path = "../X_test.csv"
     #
@@ -526,5 +541,3 @@ if __name__ == '__main__':
                              algorithm='SAMME',
                              n_estimators=200,
                              learning_rate=0.8)
-
-
