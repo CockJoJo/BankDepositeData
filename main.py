@@ -332,10 +332,10 @@ def svm_find_c(x, y):
     return svm
 
 
-def rf_find_n_estimate(x, y):
+def rf_find_n_estimate(x, y,maxdepth):
     rf_score = []
-    for i in range(1, 200):
-        rf = RandomForestClassifier(n_estimators=i, max_depth=5)
+    for i in range(1, 200, 10):
+        rf = RandomForestClassifier(n_estimators=i, max_depth=maxdepth)
         score = cross_val_score(rf, x, y, cv=10).mean()
         rf_score.append(score)
         print("rf finish {:.2f}%".format(i / 200 * 100))
@@ -343,8 +343,8 @@ def rf_find_n_estimate(x, y):
     plt.show()
 
     print("Maximum value in the score is " + str(max(rf_score)))
-    print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))))
-    return max(rf_score), rf_score.index(max(rf_score))
+    print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))*5))
+    return max(rf_score), rf_score.index(max(rf_score))*5
 
 
 def print_result_age(data):
@@ -507,7 +507,9 @@ if __name__ == '__main__':
 
     feature_sampled = SMOTE_unbalance(feature, result)[0]
     result_sampled = SMOTE_unbalance(feature, result)[1]
-    svm_find_c(feature_sampled,result_sampled)
+
+    feature_sampled_train,feature_sampled_test,result_sampled_train,result_sampled_test = train_test_split(feature_sampled,result_sampled,test_size=0.2,random_state=7)
+
     #
     # x_test_output_path = "../X_test.csv"
     #
@@ -531,13 +533,14 @@ if __name__ == '__main__':
     #
     # estimator = []
 
-    clf_max_depth = clf_find_max_depth(feature, result)
+    clf_max_depth = clf_find_max_depth(feature_sampled_train, result_sampled_train)
 
-    rf_bst_para = rf_find_n_estimate(feature, result)
+    rf_bst_para = rf_find_n_estimate(feature_sampled, result_sampled,clf_max_depth[1])
 
     max_depth = clf_max_depth[1]
 
-    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depth, splitter='best'),
                              algorithm='SAMME',
                              n_estimators=200,
                              learning_rate=0.8)
+
