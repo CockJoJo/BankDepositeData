@@ -249,7 +249,7 @@ def load_processeed_data(path):
 def bdt_adjust_para(x, y):
     bdt_score_n = []
     bdt_score_learn = []
-    for i in range(1, 200, 5):
+    for i in range(1, 200, 20):
         bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'),
                                  algorithm='SAMME',
                                  n_estimators=i,
@@ -259,7 +259,7 @@ def bdt_adjust_para(x, y):
         print("finish {:.2f}%".format(i / 200 * 100))
     print("max score: {:.4f}".format(max(bdt_score_n)))
     print("index is {}".format(bdt_score_n.index(max(bdt_score_n))))
-    plt.plot(range(1, 200, 5), bdt_score_n)
+    plt.plot(range(1, 200, 20), bdt_score_n)
     plt.show()
 
     for i in range(5, 15):
@@ -325,7 +325,18 @@ def svm_find_c(x, y):
 
 def bdt_para(x, y):
     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'), algorithm='SAMME')
-    param_grid = {'n_estimater':[5,25,50,75,100,110,120,130,140,150,160,170,180,190,200]}
+    param_grid = {'n_estimater':[5,25,45,65,85,105,125,145,165,185,205],'learning_rate':[0.5,0.8,1.0,1.2,1.5]}
+    grid_search = sklearn.model_selection.GridSearchCV(bdt,param_grid,n_jobs=8,verbose=1)
+    grid_search.fit(x,y)
+    best_parameters = grid_search.best_params_.get_params()
+    for para,val in list(best_parameters.items()):
+        print(para,val)
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth = 14,splitter='best'),
+                             algorithm='SAMME',
+                             n_estimators=best_parameters['n_estimater'],
+                             learning_rate=best_parameters['learning_rate'])
+    bdt.fit(x,y)
+    return bdt
 
 def rf_find_n_estimate(x, y,maxdepth):
     rf_score = []
@@ -457,7 +468,6 @@ def pie_res(print_data, feature):
     plt.pie(no.values, labels=index)
     plt.show()
 
-
 def SMOTE_unbalance(feature, result):
     sample_solver = SMOTE(random_state=0)
     feature_sample, result_sample = sample_solver.fit_sample(feature, result)
@@ -547,10 +557,14 @@ if __name__ == '__main__':
     clf_predict = clf.predict(feature_sampled_test)
     clf_confusion_metrix = sklearn.metrics.confusion_matrix(result_sampled_test,clf_predict)
     clf_test_score=clf.score(feature_sampled_test,result_sampled_test)
-    rf_bst_para = rf_find_n_estimate(feature_sampled_train, result_sampled_train,clf_max_depth[1])
 
-    rfc = RandomForestClassifier(max_depth=clf_max_depth,n_estimators=rf_bst_para[1])
-    max_depth = clf_max_depth[1]
+    rf_bst_para = rf_find_n_estimate(feature_sampled_train, result_sampled_train,clf_max_depth[1])
+    rfc = RandomForestClassifier(max_depth=clf_max_depth[1],n_estimators=rf_bst_para[1])
+    rfc.fit(feature_sampled_train,result_sampled_train)
+    rfc_train_score = rfc.score(feature_sampled_train,result_sampled_train)
+    rfc_predic = rfc.predict(feature_sampled_test)
+    rfc_confusion_metrix = sklearn.metrics.confusion_matrix(result_sampled_test,rfc_predic)
+    rfc_test_score = rfc.score(feature_sampled_test,result_sampled_test)
 
     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depth, splitter='best'),
                              algorithm='SAMME',
