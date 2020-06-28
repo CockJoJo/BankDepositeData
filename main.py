@@ -12,11 +12,9 @@ from sklearn.tree import DecisionTreeClassifier
 from imblearn.over_sampling import SMOTE
 from sklearn.svm import SVC
 
-
 def load_data(path):
     data = pd.read_csv(path, sep=";")
     return data
-
 
 def feature_classifier(data):
     string_features = data.columns[data.dtypes == "object"].to_series().values
@@ -30,7 +28,6 @@ def feature_classifier(data):
 
     return string_features, int_features, float_features, numeric_features, bin_features, order_features, disorder_features
 
-
 def Missing_value_perprocessing_mean(train, test):
     col = train.columns
     imp = sklearn.impute.SimpleImputer(missing_values=np.nan, strategy='mean', axis=0)
@@ -40,7 +37,6 @@ def Missing_value_perprocessing_mean(train, test):
     train = pd.DataFrame(train, columns=col)
     test = pd.DataFrame(test, columns=col)
     return train, test
-
 
 def Missing_value_perprocessing_rf(train, test):
     Missing_features_dict = {}
@@ -87,7 +83,6 @@ def Missing_value_perprocessing_rf(train, test):
         test = pd.concat([test_full_data, test_miss_data])
     return train, test
 
-
 # 使用knn填补缺失值
 def Missing_value_perprocessing_knn(train, test):
     Missing_features_dict = {}
@@ -132,7 +127,6 @@ def Missing_value_perprocessing_knn(train, test):
 
     return train, test
 
-
 # 归一化
 def Scale_perprocessing(Train):
     col = Train.columns
@@ -142,7 +136,6 @@ def Scale_perprocessing(Train):
     copy = scaler.fit_transform(copy)
     Train = pd.DataFrame(copy, columns=col)
     return Train
-
 
 # 处理二分类的特征
 def bin_features_perprocessing(bin_features, bank_data):
@@ -171,7 +164,6 @@ def disorder_features_perprocessing(disorder_features, bank_data):
         # 删掉原来的feature columns
         bank_data = bank_data.drop(features, axis=1)
     return bank_data
-
 
 # 特征值有次序关系的特征，按照特征值强弱排序（如：受教育程度）
 def order_features_perprocessing(order_features, bank_data):
@@ -253,11 +245,12 @@ def load_processeed_data(path):
 #     print("验证集分数", bdt.score(x_test, y_test))
 #
 
+
 def bdt_adjust_para(x, y):
     bdt_score_n = []
     bdt_score_learn = []
     for i in range(1, 200, 5):
-        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
+        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'),
                                  algorithm='SAMME',
                                  n_estimators=i,
                                  learning_rate=0.8)
@@ -270,7 +263,7 @@ def bdt_adjust_para(x, y):
     plt.show()
 
     for i in range(5, 15):
-        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=5, splitter='best'),
+        bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'),
                                  algorithm='SAMME',
                                  n_estimators=bdt_score_n.index(max(bdt_score_n)) * 5,
                                  learning_rate=i / 10)
@@ -278,7 +271,7 @@ def bdt_adjust_para(x, y):
         bdt_score_learn.append(score)
         print("finish {:.2f}%".format((i - 0.5) * 100))
     print("max score: {:.4f}".format(max(bdt_score_learn)))
-    plt.plot(range(5, 15, 1), bdt_score_learn)
+    plt.plot(range(5, 15), bdt_score_learn)
     plt.show()
 
     print("AbaBoost n_estimater 测试交叉验证最大分值：", max(bdt_score_n))
@@ -318,7 +311,6 @@ def clf_find_max_depth(x, y):
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
 
-
 def svm_find_c(x, y):
     svm = SVC(kernel='rbf', probability=True)
     param_grid = {'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000], 'gamma': [0.001, 0.0001]}
@@ -331,21 +323,23 @@ def svm_find_c(x, y):
     svm.fit(x, y)
     return svm
 
+def bdt_para(x, y):
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'), algorithm='SAMME')
+    param_grid = {'n_estimater':[5,25,50,75,100,110,120,130,140,150,160,170,180,190,200]}
 
 def rf_find_n_estimate(x, y,maxdepth):
     rf_score = []
     for i in range(1, 200, 10):
         rf = RandomForestClassifier(n_estimators=i, max_depth=maxdepth)
-        score = cross_val_score(rf, x, y, cv=10).mean()
+        score = cross_val_score(rf, x, y, cv=5).mean()
         rf_score.append(score)
         print("rf finish {:.2f}%".format(i / 200 * 100))
-    plt.plot(range(1, 200), rf_score)
+    plt.plot(range(1, 200, 10), rf_score)
     plt.show()
 
     print("Maximum value in the score is " + str(max(rf_score)))
     print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))*5))
     return max(rf_score), rf_score.index(max(rf_score))*5
-
 
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
@@ -372,6 +366,12 @@ def print_job_result(print_data):
     plt.legend()
     plt.show()
 
+def count_classifier(data):
+    print("Yes:", data['y'][data['y'] == 'yes'].count())
+    print("No:", data['y'][data['y'] == 'no'].count())  # 字符型属性各个属性值所占的比例
+    for col in data.columns:
+        if data[col].dtype == object:
+            print(data.groupby(data[col]).apply(lambda x: x['y'][x['y'] == 'yes'].count() / x['y'].count()))
 
 def duration_res_print(print_data):
     duration_count_yes = print_data[print_data['y'] == 'yes'].groupby('duration').count()['y']
@@ -390,7 +390,6 @@ def duration_res_print(print_data):
     plt.hist(duration_count_no, label="No", **kwargs)
     plt.legend()
     plt.show()
-
 
 def edu_res_print(print_data):
     edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
@@ -464,6 +463,11 @@ def SMOTE_unbalance(feature, result):
     feature_sample, result_sample = sample_solver.fit_sample(feature, result)
     return feature_sample, result_sample
 
+def count_nan(data):
+    for col in data.columns:
+        if data[col].dtype == object:
+            print("Percentage of \"unknown\" in %s：" % col,
+                  data[data[col] == "unknown"][col].count(), "/", data[col].count())
 
 if __name__ == '__main__':
     path = "bank-additional-full.csv"
@@ -508,6 +512,8 @@ if __name__ == '__main__':
     feature_sampled = SMOTE_unbalance(feature, result)[0]
     result_sampled = SMOTE_unbalance(feature, result)[1]
 
+    feature_sampled = feature_sampled.drop('campaign',axis=1)
+
     feature_sampled_train,feature_sampled_test,result_sampled_train,result_sampled_test = train_test_split(feature_sampled,result_sampled,test_size=0.2,random_state=7)
 
     #
@@ -535,8 +541,15 @@ if __name__ == '__main__':
 
     clf_max_depth = clf_find_max_depth(feature_sampled_train, result_sampled_train)
 
-    rf_bst_para = rf_find_n_estimate(feature_sampled, result_sampled,clf_max_depth[1])
+    clf = DecisionTreeClassifier(max_depth=clf_max_depth[1])
+    clf.fit(feature_sampled_train,result_sampled_train)
+    clf_train_score = clf.score(feature_sampled_train,result_sampled_train)
+    clf_predict = clf.predict(feature_sampled_test)
+    clf_confusion_metrix = sklearn.metrics.confusion_matrix(result_sampled_test,clf_predict)
+    clf_test_score=clf.score(feature_sampled_test,result_sampled_test)
+    rf_bst_para = rf_find_n_estimate(feature_sampled_train, result_sampled_train,clf_max_depth[1])
 
+    rfc = RandomForestClassifier(max_depth=clf_max_depth,n_estimators=rf_bst_para[1])
     max_depth = clf_max_depth[1]
 
     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depth, splitter='best'),
