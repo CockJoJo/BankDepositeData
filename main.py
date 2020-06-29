@@ -186,6 +186,7 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
         plt.ylim(*ylim)
     plt.xlabel("Training examples")
     plt.ylabel("Score")
+    print("step  1")
     train_sizes, train_scores, test_scores = learning_curve(
         estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
     train_scores_mean = np.mean(train_scores, axis=1)
@@ -217,35 +218,6 @@ def load_processeed_data(path):
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
     return x_train, x_test, x, y_train, y_test, y, cv
 
-
-# 随机森林
-# def rf_adjust_paraments(x_train, y_train, x_test, y_test, x, y):
-#     rf_score = []
-#     for i in range(0, 200, 5):
-#         rfc = RandomForestClassifier(n_estimators=i + 1, random_state=0, max_depth=10)
-#         score = cross_val_score(rfc, x, y, cv=10).mean()
-#         rf_score.append(score)
-#     print("max score: " + max(rf_score))
-#     plt.plot(range(1, 201, 5), rf_score)
-#     plt.show()
-#
-#     rfc = RandomForestClassifier(n_estimators=200)
-#     rfc.fit(x_train, y_train)
-#
-#     # AbaBoost
-#     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=1, splitter='best'),
-#                              algorithm='SAMME',
-#                              n_estimators=200,
-#                              learning_rate=0.8)
-#
-#     bdt.fit(x_train, y_train)
-#     y_pred = bdt.predict(x_test)
-#     print("混淆矩阵： " + stklearn.metrics.confusion_matrix(y_pred, y_test))
-#     print("训练集分数：", bdt.score(x_train, y_train))
-#     print("验证集分数", bdt.score(x_test, y_test))
-#
-
-
 def bdt_adjust_para(x, y):
     bdt_score_n = []
     bdt_score_learn = []
@@ -269,7 +241,7 @@ def bdt_adjust_para(x, y):
                                  learning_rate=i / 10)
         score = cross_val_score(bdt, x, y, cv=5).mean()
         bdt_score_learn.append(score)
-        print("finish {:.2f}%".format((i - 0.5) * 100))
+        print("finish {:.2f}%".format((i - 5) * 100))
     print("max score: {:.4f}".format(max(bdt_score_learn)))
     plt.plot(range(5, 15), bdt_score_learn)
     plt.show()
@@ -282,20 +254,20 @@ def bdt_adjust_para(x, y):
     print("AbaBoost learning-rate 测试交叉验证平均分值：", bdt_score_learn.mean())
     print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) / 10) + 0.5)
 
-    return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 5
+    return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 20
 
 
 # 学习曲线
-def clf_learn_curve(clf, rf, bdt, svm, x, y, cv):
-    estimator_Turple = (clf, rf, bdt, svm)
-    title_Tuple = ("decision learning curve", "random forest learning curve", "adaBoost learning curve")
-    title = "decision learning curve"
+def learn_curve(clf, rf, bdt, x, y, cv):
+    estimator_Turple = (clf, rf, bdt)
+    title_Tuple = ("Decision Tree learning curve", "Random Forest learning curve", "AdaBoost learning curve")
 
-    for i in range(4):
+    for i in range(3):
         estimator = estimator_Turple[i]
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
+
 
 
 def clf_find_max_depth(x, y):
@@ -516,41 +488,13 @@ if __name__ == '__main__':
     y1_test = y1_test = pd.DataFrame(y.y)
 
     feature = pd.concat([x1_train, x1_test], axis=0, ignore_index=True)
-
     result = pd.concat([y1_train, y1_test], axis=0, ignore_index=True)
-
     feature_sampled = SMOTE_unbalance(feature, result)[0]
     result_sampled = SMOTE_unbalance(feature, result)[1]
-
     feature_sampled = feature_sampled.drop('campaign',axis=1)
-
     feature_sampled_train,feature_sampled_test,result_sampled_train,result_sampled_test = train_test_split(feature_sampled,result_sampled,test_size=0.2,random_state=7)
 
-    #
-    # x_test_output_path = "../X_test.csv"
-    #
-    # y_test_output_path = "../y_test.csv"
-    #
-    # x_train_output_path = "../X_train.csv"
-    #
-    # y_train_output_path = "../y_train.csv"
-    #
-    # x1_test.to_csv(x_test_output_path, index=False)
-    #
-    # y1_test.to_csv(y_test_output_path, index=False)
-    #
-    # x1_train.to_csv(x_train_output_path, index=False)
-    #
-    # y1_train.to_csv(y_train_output_path, index=False)
-    #
-    # print_data = load_data(path)
-    #
-    # print_result_age(print_data)
-    #
-    # estimator = []
-
     clf_max_depth = clf_find_max_depth(feature_sampled_train, result_sampled_train)
-
     clf = DecisionTreeClassifier(max_depth=clf_max_depth[1])
     clf.fit(feature_sampled_train,result_sampled_train)
     clf_train_score = clf.score(feature_sampled_train,result_sampled_train)
@@ -566,8 +510,17 @@ if __name__ == '__main__':
     rfc_confusion_metrix = sklearn.metrics.confusion_matrix(result_sampled_test,rfc_predic)
     rfc_test_score = rfc.score(feature_sampled_test,result_sampled_test)
 
-    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=max_depth, splitter='best'),
+    bdt_best_para = bdt_adjust_para(feature_sampled_train,result_sampled_train)
+    bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=clf_max_depth[1], splitter='best'),
                              algorithm='SAMME',
-                             n_estimators=200,
-                             learning_rate=0.8)
+                             n_estimators=bdt_best_para[1])
+    #报错，需要将result_sampled_train转化为一维数组
+    bdt.fit(feature_sampled_train,result_sampled_train)
+    bdt_train_score = bdt.score(feature_sampled_train,result_sampled_train)
+    bdt_predict = bdt.predict(feature_sampled_test)
+    bdt_confusion_metrix = sklearn.metrics.confusion_matrix(result_sampled_test,bdt_predict)
+    bdt_test_score = bdt.score(feature_sampled_test,result_sampled_test)
 
+    cv = ShuffleSplit(n_splits=10, test_size=0.1, random_state=0)
+
+    learn_curve(clf, rfc, bdt, feature_sampled, result_sampled, cv)
