@@ -237,6 +237,7 @@ def bdt_adjust_para(x, y):
     print("index is {}".format(bdt_score_n.index(max(bdt_score_n))))
     plt.plot(range(1, 200, 20), bdt_score_n)
     plt.show()
+    plt.savefig('adaboost_n_estimator.png', dpi=400, bbox_inches='tight')
 
     for i in range(5, 15):
         bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'),
@@ -247,8 +248,9 @@ def bdt_adjust_para(x, y):
         bdt_score_learn.append(score)
         print("finish {:.2f}%".format((i - 5) * 100))
     print("max score: {:.4f}".format(max(bdt_score_learn)))
-    plt.plot(range(5, 15), bdt_score_learn)
+    plt.plot(np.linspace(0.5, 1.4, 10), bdt_score_learn)
     plt.show()
+    plt.savefig('adaboost_learning_rate.png', dpi=400, bbox_inches='tight')
     return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 20
 
 
@@ -262,6 +264,7 @@ def learn_curve(clf, rf, bdt, x, y, cv):
         title = title_Tuple[i]
         plot_learning_curve(estimator, title, x, y, cv=cv)
         plt.show()
+        plt.savefig(title_Tuple[i]+'.png', dpi=400, bbox_inches='tight')
 
 
 # 决策树参数调优
@@ -274,6 +277,7 @@ def clf_find_max_depth(x, y):
         print("finish {:.2f}%".format(i / 50 * 100))
     plt.plot(range(1, 50), clf_score)
     plt.show()
+    plt.savefig('desision_tree_max_depth.png', dpi=400, bbox_inches='tight')
     print("Maximum value in the score is " + str(max(clf_score)))
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
@@ -317,6 +321,7 @@ def rf_find_n_estimate(x, y,maxdepth):
         print("rf finish {:.2f}%".format(i / 200 * 100))
     plt.plot(range(1, 200, 10), rf_score)
     plt.show()
+    plt.savefig('random_forest_n_estimator.png', dpi=400, bbox_inches='tight')
 
     print("Maximum value in the score is " + str(max(rf_score)))
     print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))*5))
@@ -329,6 +334,7 @@ def print_result_age(data):
     plt.hist(data[data['y'] == 'no']['age'], label="No", **kwargs)
     plt.legend()
     plt.show()
+    plt.savefig('age_result.png', dpi=400, bbox_inches='tight')
 
 # 职业数据可视化
 def print_job_result(print_data):
@@ -347,6 +353,7 @@ def print_job_result(print_data):
     plt.xticks(rotation=90)
     plt.legend()
     plt.show()
+    plt.savefig('job_result.png', dpi=400, bbox_inches='tight')
 
 # 统计出字符型特征
 def count_classifier(data):
@@ -374,6 +381,7 @@ def duration_res_print(print_data):
     plt.hist(duration_count_no, label="No", **kwargs)
     plt.legend()
     plt.show()
+    plt.savefig('duration_result.png', dpi=400, bbox_inches='tight')
 
 # 学历特征可视化
 def edu_res_print(print_data):
@@ -403,6 +411,7 @@ def edu_res_print(print_data):
     ax2.set_ylabel('No')
     plt.legend()
     plt.show()
+    plt.savefig('education.png', dpi=400, bbox_inches='tight')
 
 # 学历与存款率可视化
 def deposite_rate_print(print_data):
@@ -426,6 +435,7 @@ def deposite_rate_print(print_data):
     plt.xticks(rotation=90)
     plt.legend()
     plt.show()
+    plt.savefig('edu_result.png', dpi=400, bbox_inches='tight')
 
 # 饼图绘画
 def pie_res(print_data, feature):
