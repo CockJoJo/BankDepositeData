@@ -16,6 +16,7 @@ def load_data(path):
     data = pd.read_csv(path, sep=";")
     return data
 
+# 数据特征分类
 def feature_classifier(data):
     string_features = data.columns[data.dtypes == "object"].to_series().values
     int_features = data.columns[data.dtypes == "int64"].to_series().values
@@ -28,6 +29,7 @@ def feature_classifier(data):
 
     return string_features, int_features, float_features, numeric_features, bin_features, order_features, disorder_features
 
+# 数据平均值填充(准确率低)
 def Missing_value_perprocessing_mean(train, test):
     col = train.columns
     imp = sklearn.impute.SimpleImputer(missing_values=np.nan, strategy='mean', axis=0)
@@ -38,6 +40,7 @@ def Missing_value_perprocessing_mean(train, test):
     test = pd.DataFrame(test, columns=col)
     return train, test
 
+# 数据随机森林方法填充
 def Missing_value_perprocessing_rf(train, test):
     Missing_features_dict = {}
     Missing_features_name = []
@@ -218,6 +221,7 @@ def load_processeed_data(path):
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=0)
     return x_train, x_test, x, y_train, y_test, y, cv
 
+# Adaboost参数调优
 def bdt_adjust_para(x, y):
     bdt_score_n = []
     bdt_score_learn = []
@@ -245,15 +249,6 @@ def bdt_adjust_para(x, y):
     print("max score: {:.4f}".format(max(bdt_score_learn)))
     plt.plot(range(5, 15), bdt_score_learn)
     plt.show()
-
-    print("AbaBoost n_estimater 测试交叉验证最大分值：", max(bdt_score_n))
-    print("AbaBoost n_estimater 测试交叉验证平均分值：", bdt_score_n.mean())
-    print("AbaBoost 交叉验证最大分值所选择n_estimate值为", bdt_score_n.index(max(bdt_score_n)) * 5)
-
-    print("AbaBoost learning-rate 测试交叉验证最大分值：", max(bdt_score_learn))
-    print("AbaBoost learning-rate 测试交叉验证平均分值：", bdt_score_learn.mean())
-    print("AbaBoost 交叉验证最大分值所选择learning rate值为", (bdt_score_learn.index(max(bdt_score_learn)) / 10) + 0.5)
-
     return max(bdt_score_n), bdt_score_n.index(max(bdt_score_n)) * 20
 
 
@@ -269,7 +264,7 @@ def learn_curve(clf, rf, bdt, x, y, cv):
         plt.show()
 
 
-
+# 决策树参数调优
 def clf_find_max_depth(x, y):
     clf_score = []
     for i in range(1, 50):
@@ -283,6 +278,7 @@ def clf_find_max_depth(x, y):
     print("The max depth of Maximum value in score is " + str(clf_score.index(max(clf_score))))
     return max(clf_score), clf_score.index(max(clf_score))
 
+# 支持向量机参数调优
 def svm_find_c(x, y):
     svm = SVC(kernel='rbf', probability=True)
     param_grid = {'C': [1e-3, 1e-2, 1e-1, 1, 10, 100, 1000], 'gamma': [0.001, 0.0001]}
@@ -295,6 +291,7 @@ def svm_find_c(x, y):
     svm.fit(x, y)
     return svm
 
+# 通过gridSearchCV进行参数调优（费时，并未在报告中体现）
 def bdt_para(x, y):
     bdt = AdaBoostClassifier(DecisionTreeClassifier(max_depth=15, splitter='best'), algorithm='SAMME')
     param_grid = {'n_estimater':[5,25,45,65,85,105,125,145,165,185,205],'learning_rate':[0.5,0.8,1.0,1.2,1.5]}
@@ -310,6 +307,7 @@ def bdt_para(x, y):
     bdt.fit(x,y)
     return bdt
 
+# 随机森林参数调优
 def rf_find_n_estimate(x, y,maxdepth):
     rf_score = []
     for i in range(1, 200, 10):
@@ -324,6 +322,7 @@ def rf_find_n_estimate(x, y,maxdepth):
     print("The number of n_estimater who has best performance is " + str(rf_score.index(max(rf_score))*5))
     return max(rf_score), rf_score.index(max(rf_score))*5
 
+# 年龄数据可视化
 def print_result_age(data):
     kwargs = dict(histtype='stepfilled', alpha=0.3, bins=40)
     plt.hist(data[data['y'] == 'yes']['age'], label="Yes", **kwargs)
@@ -331,7 +330,7 @@ def print_result_age(data):
     plt.legend()
     plt.show()
 
-
+# 职业数据可视化
 def print_job_result(print_data):
     job = print_data[print_data['y'] == 'yes'].groupby('job').count()['y'].index
     yes = print_data[print_data['y'] == 'yes'].groupby('job').count()['y']
@@ -349,6 +348,7 @@ def print_job_result(print_data):
     plt.legend()
     plt.show()
 
+# 统计出字符型特征
 def count_classifier(data):
     print("Yes:", data['y'][data['y'] == 'yes'].count())
     print("No:", data['y'][data['y'] == 'no'].count())  # 字符型属性各个属性值所占的比例
@@ -356,6 +356,7 @@ def count_classifier(data):
         if data[col].dtype == object:
             print(data.groupby(data[col]).apply(lambda x: x['y'][x['y'] == 'yes'].count() / x['y'].count()))
 
+# 等待时间可视化（对于结果并没太大用）
 def duration_res_print(print_data):
     duration_count_yes = print_data[print_data['y'] == 'yes'].groupby('duration').count()['y']
     duration_count_no = print_data[print_data['y'] == 'no'].groupby('duration').count()['y']
@@ -374,6 +375,7 @@ def duration_res_print(print_data):
     plt.legend()
     plt.show()
 
+# 学历特征可视化
 def edu_res_print(print_data):
     edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
            "university.degree", "unknown"]
@@ -402,7 +404,7 @@ def edu_res_print(print_data):
     plt.legend()
     plt.show()
 
-
+# 学历与存款率可视化
 def deposite_rate_print(print_data):
     edu = ["illiterate", "basic.4y", "basic.6y", "basic.9y", "high.school", "professional.course",
            "university.degree", "unknown"]
@@ -425,7 +427,7 @@ def deposite_rate_print(print_data):
     plt.legend()
     plt.show()
 
-
+# 饼图绘画
 def pie_res(print_data, feature):
     index = print_data.groupby(feature).count().index
     yes = print_data[print_data['y'] == 'yes'].groupby(feature).count()['y']
@@ -440,11 +442,13 @@ def pie_res(print_data, feature):
     plt.pie(no.values, labels=index)
     plt.show()
 
+# SMOTE技术平衡数据
 def SMOTE_unbalance(feature, result):
     sample_solver = SMOTE(random_state=0)
     feature_sample, result_sample = sample_solver.fit_sample(feature, result)
     return feature_sample, result_sample
 
+# 统计每个特征拥有的空数值项
 def count_nan(data):
     for col in data.columns:
         if data[col].dtype == object:
